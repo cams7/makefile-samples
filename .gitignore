@@ -1,28 +1,13 @@
-# Compiled Object files
-*.slo
-*.lo
+#Linux
+*~
+
+#Windows
+Thumbs.db
+
+#Arquivos gerado pelo makefile
 *.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+*.d
+*.lst
+*.map
+*.elf
+*.hex
