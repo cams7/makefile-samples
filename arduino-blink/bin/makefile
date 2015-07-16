@@ -31,6 +31,7 @@ ELF_FILE = $(BIN_DIR)/$(TARGET).elf
 HEX_FILE = $(BIN_DIR)/$(TARGET).hex
 EEP_FILE = $(BIN_DIR)/$(TARGET).eep
 MAP_FILE = $(BIN_DIR)/$(TARGET).map
+LSS_FILE = $(BIN_DIR)/$(TARGET).lss
 
 ifneq ($(CROSS), )
   CC = $(CROSS)gcc
@@ -60,7 +61,7 @@ LDFLAGS = -Wl,-Map=$(MAP_FILE),--cref
 
 ifneq ($(wildcard $(OBJ_FILES) $(CORE_OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(OBJ_FILES:%.o=%.d) $(CORE_OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst) $(CORE_OBJ_FILES:%.o=%.lst)), )
 clean:
-	-rm $(CORE_DIR)/lib$(CORE_DIR_NAME).a $(CORE_DIR)/lib$(CORE_DIR_NAME).lss
+	-rm $(CORE_DIR)/lib$(CORE_DIR_NAME).a $(CORE_DIR)/lib$(CORE_DIR_NAME).lss $(LSS_FILE)
 	-rm $(wildcard $(OBJ_FILES) $(CORE_OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(OBJ_FILES:%.o=%.d) $(CORE_OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst) $(CORE_OBJ_FILES:%.o=%.lst))
 else
 clean:
