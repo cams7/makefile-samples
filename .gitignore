@@ -11,3 +11,5 @@ Thumbs.db
 *.map
 *.elf
 *.hex
+*.lss
+*.a

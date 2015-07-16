@@ -23,6 +23,8 @@ INCLUDE_DIR = ../include
 SRC_DIR = ../src
 BIN_DIR = .
 
+OBJ_FILES = $(patsubst %, $(BIN_DIR)/%, $(SRCS:.c=.o))
+
 TARGET = main
 
 INCLUDES = uart.h buffer.h
