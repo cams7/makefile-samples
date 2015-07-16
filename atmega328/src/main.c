@@ -18,6 +18,8 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
+#include <blink.h>
+
 #define LED_BIT PB5
 #define LED_HIGH PORTB |= _BV(LED_BIT)
 #define LED_LOW PORTB &= ~(_BV(LED_BIT))
@@ -35,6 +37,6 @@ void main(void) {
 			LED_LOW;
 
 		led_state = !led_state;
-		_delay_ms(100);
+		_delay_ms(getDelayInMs());
 	}
 }
