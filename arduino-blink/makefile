@@ -8,15 +8,21 @@ MCU ?= atmega328p
 F_CPU ?= 16000000UL
 
 ARDUINO_CORE_NAME = arduino_core
-ARDUINO_CORE_DIR = ../arduino/lib
+ARDUINO_CORE_LIB_DIR = ../arduino/lib
+
+ARDUINO_THREAD_NAME = arduino_thread
+ARDUINO_THREAD_DIR = ../arduino-thread
+ARDUINO_THREAD_LIB_DIR = $(ARDUINO_THREAD_DIR)/lib
 
 INCLUDE_DIR = include
 SRC_DIR = src
 CORE_DIR = core
 
+ARDUINO_THREAD_INCLUDE_DIR = $(ARDUINO_THREAD_DIR)/$(INCLUDE_DIR)
+
 TARGET = main
 
-INCLUDES = 
+INCLUDES = EEPROM.h
 
 SRCS = $(TARGET).cpp $(INCLUDES:%.h=%.cpp)
 
@@ -37,7 +43,7 @@ ifneq ($(CROSS), )
   SIZE = $(CROSS)size
 endif
 
-CFLAGS_COMMON = -I"$(ARDUINO_VARIANTS_DIR)" -I"$(ARDUINO_CORES_DIR)"  -I"$(ARDUINO_CORES_LIBC_DIR)" -I"$(INCLUDE_DIR)"
+CFLAGS_COMMON = -I"$(ARDUINO_VARIANTS_DIR)" -I"$(ARDUINO_CORES_DIR)"  -I"$(ARDUINO_CORES_LIBC_DIR)" -I"$(ARDUINO_THREAD_INCLUDE_DIR)" -I"$(INCLUDE_DIR)"
 
 ifneq ($(F_CPU),)
   CFLAGS_COMMON += -DF_CPU=$(F_CPU)
@@ -66,7 +72,7 @@ endif
 
 $(CORE_DIR)/%.elf: $(OBJ_FILES)
 	@echo "Linking:" $@..
-	$(SILENT) $(CXX) --cref -s -O$(OPT) -o"$@" $(OBJ_FILES) -l$(ARDUINO_CORE_NAME) -mrelax -Wl,--gc-sections -Wl,--gc-sections -L"$(ARDUINO_CORE_DIR)" -mmcu=$(MCU) -lm $(LDFLAGS)
+	$(SILENT) $(CXX) --cref -s -O$(OPT) -o"$@" $(OBJ_FILES) -l$(ARDUINO_CORE_NAME) -l$(ARDUINO_THREAD_NAME) -mrelax -Wl,--gc-sections -Wl,--gc-sections -L"$(ARDUINO_CORE_LIB_DIR)" -L"$(ARDUINO_THREAD_LIB_DIR)" -mmcu=$(MCU) -lm $(LDFLAGS)
 	$(SILENT) $(OBJDUMP) -h -S $@  >"$(<:%.o=%.lss)"
 
 $(CORE_DIR)/%.o : $(SRC_DIR)/%.cpp
