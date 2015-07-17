@@ -1,6 +1,6 @@
 -include C:/Users/cams7/desenv/github/makefile-samples/user.mk
 
-SILENT ?= @
+#SILENT ?= @
 CROSS ?= avr-
 
 MCU ?= atmega328p
@@ -19,9 +19,9 @@ CORE_DIR = core
 CORE_LIBC_DIR = $(CORE_DIR)/avr-libc
 LIB_DIR = lib
 
-OBJ_FILES = $(patsubst %, $(CORE_LIBC_DIR)/%, $(CORES_LIBC_SRCS:.c=.o)) $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_C:.c=.o)) $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_CPP:.cpp=.o))
+OBJ_FILES = $(patsubst %, $(CORE_LIBC_DIR)/%, $(CORES_LIBC_SRCS:%.c=%.o)) $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_C:%.c=%.o)) $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_CPP:%.cpp=%.o))
 
-CORE_NAME = arduino_core
+CORE_FILE = $(LIB_DIR)/libarduino_core.a
 
 ifneq ($(CROSS), )
   CC = $(CROSS)gcc
@@ -46,22 +46,21 @@ CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%
 
 all: size
 
-size: lib$(CORE_NAME)
-	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $(LIB_DIR)/$<.a
+size: $(CORE_FILE)
+	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $<
 
-ifneq ($(wildcard $(OBJ_FILES) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst)), )
+ifneq ($(wildcard $(OBJ_FILES) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst) $(CORE_FILE) $(CORE_FILE:%.a=%.lss)), )
 clean:
-	-rm $(LIB_DIR)/lib$(CORE_NAME).a $(LIB_DIR)/lib$(CORE_NAME).lss
-	-rm $(wildcard $(OBJ_FILES) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst))
+	-rm $(wildcard $(OBJ_FILES) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst) $(CORE_FILE) $(CORE_FILE:%.a=%.lss))
 else
 clean:
 	@echo "Nothing to clean."
 endif
 
-lib$(CORE_NAME) : $(OBJ_FILES)
-	@echo "Creating lib: " $(LIB_DIR)/$@.a...
-	$(SILENT) $(AR) -r  "$(LIB_DIR)/$@.a" $^ 
-	$(SILENT) $(OBJDUMP) -h -S $(LIB_DIR)/$@.a  >"$(LIB_DIR)/$@.lss"
+$(LIB_DIR)/%.a : $(OBJ_FILES)
+	@echo "Creating lib: " $@...
+	$(SILENT) $(AR) -r  "$@" $^ 
+	$(SILENT) $(OBJDUMP) -h -S $@  >"$(@:%.a=%.lss)"
 
 $(CORE_DIR)/%.o : $(ARDUINO_CORES_DIR)/%.cpp
 	@echo "Compiling: " $@... 
