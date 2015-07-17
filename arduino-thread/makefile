@@ -1,21 +1,7 @@
--include ../avr.mk
--include ../arduino.mk
-
-#SILENT ?= @
-CROSS ?= avr-
-
-MCU ?= atmega328p
-F_CPU ?= 16000000UL
-
-INCLUDE_DIR = include
-SRC_DIR = src
-CORE_DIR = core
-LIB_DIR = lib
+-include ../common.mk
 
 INCLUDES = Thread.h ThreadController.h
-
 SRCS = $(INCLUDES:%.h=%.cpp)
-
 OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.cpp=%.o))
 
 CORE_FILE = $(LIB_DIR)/libarduino_thread.a

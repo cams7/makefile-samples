@@ -1,19 +1,10 @@
--include ../avr.mk
--include ../arduino.mk
+-include ../common.mk
 
-#SILENT ?= @
-CROSS ?= avr-
-
-MCU ?= atmega328p
-F_CPU ?= 16000000UL
+CORE_LIBC_DIR = $(CORE_DIR)/avr-libc
 
 CORES_SRCS_CPP = WString.cpp WMath.cpp USBCore.cpp Tone.cpp Stream.cpp Print.cpp new.cpp IPAddress.cpp HID.cpp  HardwareSerial.cpp CDC.cpp
 CORES_SRCS_C = wiring_shift.c wiring_pulse.c wiring_digital.c wiring_analog.c wiring.c WInterrupts.c
 CORES_LIBC_SRCS = malloc.c realloc.c
-
-CORE_DIR = core
-CORE_LIBC_DIR = $(CORE_DIR)/avr-libc
-LIB_DIR = lib
 
 OBJ_FILES = $(patsubst %, $(CORE_LIBC_DIR)/%, $(CORES_LIBC_SRCS:%.c=%.o)) $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_C:%.c=%.o)) $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_CPP:%.cpp=%.o))
 

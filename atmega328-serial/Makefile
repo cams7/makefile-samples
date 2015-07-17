@@ -10,35 +10,12 @@
 # WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-# Define your programmer in this file: ~/user.mk
--include C:/Users/cams7/desenv/github/makefile-samples/user.mk
-
-#SILENT ?= @
-CROSS ?= avr-
-
-MCU ?= atmega328p
-F_CPU ?= 16000000UL
-
-INCLUDE_DIR = ../include
-SRC_DIR = ../src
-BIN_DIR = .
-
-OBJ_FILES = $(patsubst %, $(BIN_DIR)/%, $(SRCS:.c=.o))
-
-TARGET = main
+# Define your programmer in this file: common.mk
+-include ../common.mk
 
 INCLUDES = uart.h buffer.h
-INCLUDE_FILES = $(patsubst %, $(INCLUDE_DIR)/%, $(INCLUDES))
-
 SRCS = $(TARGET).c $(INCLUDES:.h=.c)
-SRC_FILES = $(patsubst %, $(SRC_DIR)/%, $(SRCS))
-
-OBJ_FILES = $(patsubst %, $(BIN_DIR)/%, $(SRCS:.c=.o))
-
-ELF_FILE = $(BIN_DIR)/$(TARGET).elf
-HEX_FILE = $(BIN_DIR)/$(TARGET).hex
-EEP_FILE = $(BIN_DIR)/$(TARGET).eep
-MAP_FILE = $(BIN_DIR)/$(TARGET).map
+OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.c=%.o))
 
 ifneq ($(CROSS), )
   CC = $(CROSS)gcc
@@ -74,14 +51,14 @@ OPT=s
 CFLAGS += -g -O$(OPT) \
 -ffreestanding -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums \
 -Wall -Wstrict-prototypes \
--Wa,-adhlns=$(@:.o=.lst) -std=gnu99 -mmcu=$(MCU) 
+-Wa,-adhlns=$(@:%.o=%.lst) -std=gnu99 -mmcu=$(MCU) 
 
 LDFLAGS = -Wl,-Map=$(MAP_FILE),--cref
 
-printAllFiles:
-	@echo Include files: $(INCLUDE_FILES)
-	@echo Source files: $(SRC_FILES)
-	@echo Object files: $(OBJ_FILES)
+all: $(ELF_FILE) size
+
+size: $(ELF_FILE)
+	$(SILENT) $(SIZE) -C --mcu=$(MCU) $<
 	
 ifneq ($(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst)), )
 clean:
@@ -91,30 +68,25 @@ clean:
 	@echo "Nothing to clean."
 endif
 
-all: $(ELF_FILE) size
-
-size: $(ELF_FILE)
-	$(SILENT) $(SIZE) -C --mcu=$(MCU) $(ELF_FILE)
-
 #.SECONDARY:
 
-$(BIN_DIR)/%.elf: $(OBJ_FILES)
+$(CORE_DIR)/%.elf: $(OBJ_FILES)
 	@echo "Linking:" $@...
-	$(SILENT) $(CC) $(CFLAGS) $(OBJ_FILES) --output $@ $(LDFLAGS)
+	$(SILENT) $(CC) $(CFLAGS) $^ --output $@ $(LDFLAGS)
 
-#$(BIN_DIR)/%.o : $(SRC_DIR)/%.cpp
+#$(CORE_DIR)/%.o : $(SRC_DIR)/%.cpp
 #	@echo "[$(TARGET)] Compiling:" $@... 
 #	$(SILENT) $(CXX) $(CXXFLAGS) -MMD -MF $(@:%.o=%.d) -c $< -o $@
 
-$(BIN_DIR)/%.o : $(SRC_DIR)/%.c
+$(CORE_DIR)/%.o : $(SRC_DIR)/%.c
 	@echo "[$(TARGET)] Compiling:" $@...
 	$(SILENT) $(CC) $(CFLAGS) -MMD -MF $(@:%.o=%.d) -c $< -o $@
 	
-#$(BIN_DIR)/%.d : $(SRC_DIR)/%.cpp
+#$(CORE_DIR)/%.d : $(SRC_DIR)/%.cpp
 #	@echo "[$(TARGET)] Generating dependency:" $@...
 #	$(SILENT) $(CXX) $(CXXFLAGS) -MM -MT $(addsuffix .o, $(basename $@)) -MF $@ $<
 
-#$(BIN_DIR)/%.d : $(SRC_DIR)/%.c
+#$(CORE_DIR)/%.d : $(SRC_DIR)/%.c
 #	@echo "[$(TARGET)] Generating dependency:" $@...
 #	$(SILENT) $(CC) $(CFLAGS) -MM -MT $(addsuffix .o, $(basename $@)) -MF $@ $<
 
@@ -163,16 +135,16 @@ flash: $(HEX_FILE) #$(EEP_FILE)
 fuse:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSE) 
 
-$(BIN_DIR)/%.hex: $(BIN_DIR)/%.elf
+$(CORE_DIR)/%.hex: $(ELF_FILE)
 	@echo "Creating flash file:" $@...
 	$(SILENT) $(OBJCOPY) -O ihex -R .eeprom $< $@
 
-$(BIN_DIR)/%.eep: $(BIN_DIR)/%.elf
+$(CORE_DIR)/%.eep: $(ELF_FILE)
 	@echo "Creating eeprom file:" $@...
 	$(SILENT) $(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
 	--change-section-lma .eeprom=0 -O ihex $< $@
 else
-FLASH_MSG="You need to set AVRDUDE_PROGRAMMER/AVRDUDE_PORT/AVRDUDE_SPEED in ~/user.mk"
+FLASH_MSG="You need to set AVRDUDE_PROGRAMMER/AVRDUDE_PORT/AVRDUDE_SPEED in common.mk"
 flash:
 	@echo $(FLASH_MSG)
 

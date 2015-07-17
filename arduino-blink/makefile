@@ -1,38 +1,17 @@
--include ../avr.mk
--include ../arduino.mk
-
-#SILENT ?= @
-CROSS ?= avr-
-
-MCU ?= atmega328p
-F_CPU ?= 16000000UL
+-include ../common.mk
 
 ARDUINO_CORE_NAME = arduino_core
-ARDUINO_CORE_LIB_DIR = ../arduino/lib
+ARDUINO_CORE_DIR = ../arduino
+ARDUINO_CORE_LIB_DIR = $(ARDUINO_CORE_DIR)/lib
 
 ARDUINO_THREAD_NAME = arduino_thread
 ARDUINO_THREAD_DIR = ../arduino-thread
 ARDUINO_THREAD_LIB_DIR = $(ARDUINO_THREAD_DIR)/lib
-
-INCLUDE_DIR = include
-SRC_DIR = src
-CORE_DIR = core
-
 ARDUINO_THREAD_INCLUDE_DIR = $(ARDUINO_THREAD_DIR)/$(INCLUDE_DIR)
 
-TARGET = main
-
 INCLUDES = EEPROM.h
-
 SRCS = $(TARGET).cpp $(INCLUDES:%.h=%.cpp)
-
 OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.cpp=%.o))
-
-ELF_FILE = $(CORE_DIR)/$(TARGET).elf
-HEX_FILE = $(CORE_DIR)/$(TARGET).hex
-EEP_FILE = $(CORE_DIR)/$(TARGET).eep
-MAP_FILE = $(CORE_DIR)/$(TARGET).map
-LSS_FILE = $(CORE_DIR)/$(TARGET).lss
 
 ifneq ($(CROSS), )
   CC = $(CROSS)gcc
@@ -137,7 +116,7 @@ $(CORE_DIR)/%.eep: $(ELF_FILE)
 	$(SILENT) $(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
 	--change-section-lma .eeprom=0 -O ihex $< $@
 else
-FLASH_MSG="You need to set AVRDUDE_PROGRAMMER/AVRDUDE_PORT/AVRDUDE_SPEED in ~/user.mk"
+FLASH_MSG="You need to set AVRDUDE_PROGRAMMER/AVRDUDE_PORT/AVRDUDE_SPEED in common.mk"
 flash:
 	@echo $(FLASH_MSG)
 
