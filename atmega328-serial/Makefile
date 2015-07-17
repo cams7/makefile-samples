@@ -58,10 +58,19 @@ CFLAGS += -g -O$(OPT) \
 
 LDFLAGS = -Wl,-Map=$(MAP_FILE),--cref
 
-all: $(ELF_FILE) size
+all: mkdir $(ELF_FILE) size
 
 size: $(ELF_FILE)
 	$(SILENT) $(SIZE) -C --mcu=$(MCU) $<
+	
+ifeq ($(wildcard $(CORE_DIR) $(LIB_DIR)), )	
+mkdir:
+	@echo "Create dirs $(CORE_DIR) $(LIB_DIR)" 
+	$(MKDIR_P) $(CORE_DIR) $(LIB_DIR)
+	@echo ' '
+else
+mkdir:
+endif
 	
 ifneq ($(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst)), )
 clean:

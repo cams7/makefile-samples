@@ -25,3 +25,5 @@ HEX_FILE = $(CORE_DIR)/$(TARGET).hex
 EEP_FILE = $(CORE_DIR)/$(TARGET).eep
 MAP_FILE = $(CORE_DIR)/$(TARGET).map
 LSS_FILE = $(CORE_DIR)/$(TARGET).lss
+
+MKDIR_P = mkdir -p

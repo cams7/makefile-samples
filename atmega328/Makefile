@@ -10,7 +10,7 @@
 # WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 # PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-# Define your programmer in this file: ~/user.mk
+# Define your programmer in this file: common.mk
 ifeq ($(OS),Windows_NT)
 	-include ../common-win.mk 
 else
@@ -21,17 +21,17 @@ SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.c -printf "%f "`
 OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.c=%.o))
 
 ifneq ($(CROSS), )
-  CC = $(CROSS)gcc
-#  CXX = $(CROSS)g++
-  OBJCOPY = $(CROSS)objcopy
-  OBJDUMP = $(CROSS)objdump
-  SIZE = $(CROSS)size
+  	CC = $(CROSS)gcc
+	CXX = $(CROSS)g++
+  	OBJCOPY = $(CROSS)objcopy
+  	OBJDUMP = $(CROSS)objdump
+  	SIZE = $(CROSS)size
 endif
 
 CFLAGS = -I$(INCLUDE_DIR)
 
 ifneq ($(F_CPU),)
-  CFLAGS += -DF_CPU=$(F_CPU)
+  	CFLAGS += -DF_CPU=$(F_CPU)
 endif
 
 # These will automatically be checked if they are set to YES
@@ -58,10 +58,19 @@ CFLAGS += -g -O$(OPT) \
 
 LDFLAGS = -Wl,-Map=$(MAP_FILE),--cref
 
-all: $(ELF_FILE) size
+all: mkdir $(ELF_FILE) size
 
 size: $(ELF_FILE)
 	$(SILENT) $(SIZE) -C --mcu=$(MCU) $<
+	
+ifeq ($(wildcard $(CORE_DIR) $(LIB_DIR)), )	
+mkdir:
+	@echo "Create dirs $(CORE_DIR) $(LIB_DIR)" 
+	$(MKDIR_P) $(CORE_DIR) $(LIB_DIR)
+	@echo ' '
+else
+mkdir:
+endif
 	
 ifneq ($(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst)), )
 clean:

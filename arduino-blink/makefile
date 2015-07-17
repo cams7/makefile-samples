@@ -17,18 +17,22 @@ SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.cpp -printf "%f 
 OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.cpp=%.o))
 
 ifneq ($(CROSS), )
-  CC = $(CROSS)gcc
-  CXX = $(CROSS)g++
-  AR = $(CROSS)ar
-  OBJCOPY = $(CROSS)objcopy
-  OBJDUMP = $(CROSS)objdump
-  SIZE = $(CROSS)size
+  	CC = $(CROSS)gcc
+  	CXX = $(CROSS)g++
+  	AR = $(CROSS)ar
+  	OBJCOPY = $(CROSS)objcopy
+  	OBJDUMP = $(CROSS)objdump
+  	SIZE = $(CROSS)size
 endif
 
-CFLAGS_COMMON = -I"$(ARDUINO_VARIANTS_DIR)" -I"$(ARDUINO_CORES_DIR)"  -I"$(ARDUINO_CORES_LIBC_DIR)" -I"$(ARDUINO_THREAD_INCLUDE_DIR)" -I"$(INCLUDE_DIR)"
+CFLAGS_COMMON = -I"$(ARDUINO_VARIANTS_DIR)" -I"$(ARDUINO_CORES_DIR)" 
+ifeq ($(OS),Windows_NT)
+	CFLAGS_COMMON += -I"$(ARDUINO_CORES_LIBC_DIR)"
+endif
+CFLAGS_COMMON += -I"$(ARDUINO_THREAD_INCLUDE_DIR)" -I"$(INCLUDE_DIR)"
 
 ifneq ($(F_CPU),)
-  CFLAGS_COMMON += -DF_CPU=$(F_CPU)
+  	CFLAGS_COMMON += -DF_CPU=$(F_CPU)
 endif
 
 OPT=s
@@ -38,15 +42,24 @@ CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
 CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX) 
 CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions $(CFLAGS_SUFFIX)
 
-LDFLAGS = --cref -s -O$(OPT) -o"$@" $^ -l$(ARDUINO_CORE_NAME) -l$(ARDUINO_THREAD_NAME) -lm -Wl,-Map,$(@:%.elf=%.map),--cref -mrelax -Wl,--gc-sections -Wl,--gc-sections -L"$(ARDUINO_CORE_LIB_DIR)" -L"$(ARDUINO_THREAD_LIB_DIR)" -mmcu=$(MCU)
+LDFLAGS = -s -O$(OPT) -o"$@" $^ -l$(ARDUINO_CORE_NAME) -l$(ARDUINO_THREAD_NAME) -lm -Wl,-Map,$(@:%.elf=%.map),--cref -mrelax -Wl,--gc-sections -Wl,--gc-sections -L"$(ARDUINO_CORE_LIB_DIR)" -L"$(ARDUINO_THREAD_LIB_DIR)" -mmcu=$(MCU)
 
-all: $(LSS_FILE) sizedummy
+all: mkdir $(LSS_FILE) sizedummy
 
 sizedummy: $(ELF_FILE)
 	@echo 'Invoking: Print Size'
 	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $<
 	@echo 'Finished building: $@'
 	@echo ' '
+	
+ifeq ($(wildcard $(CORE_DIR) $(LIB_DIR)), )	
+mkdir:
+	@echo "Create dirs $(CORE_DIR) $(LIB_DIR)" 
+	$(MKDIR_P) $(CORE_DIR) $(LIB_DIR)
+	@echo ' '
+else
+mkdir:
+endif
 
 ifneq ($(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(LSS_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst)), )
 clean:
@@ -89,33 +102,33 @@ AVRDUDE := avrdude
 
 AVRDUDE_FLAGS += -p $(MCU)
 ifneq ($(AVRDUDE_PORT), )
-  AVRDUDE_FLAGS += -P $(AVRDUDE_PORT)
+  	AVRDUDE_FLAGS += -P $(AVRDUDE_PORT)
 endif
 ifneq ($(AVRDUDE_PROGRAMMER), )
-  AVRDUDE_FLAGS += -c $(AVRDUDE_PROGRAMMER)
+  	AVRDUDE_FLAGS += -c $(AVRDUDE_PROGRAMMER)
 endif
 ifneq ($(AVRDUDE_SPEED), )
-  AVRDUDE_FLAGS += -b $(AVRDUDE_SPEED)
+  	AVRDUDE_FLAGS += -b $(AVRDUDE_SPEED)
 endif
 
 #Add more verbose output if we dont have SILENT set
 ifeq ($(SILENT), )
-  AVRDUDE_FLAGS += -v -v
+  	AVRDUDE_FLAGS += -v -v
 endif
 
 # Fuses for internal 8MHz oscillator
 ifeq ($(MCU), atmega328p)
-  AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe2:m -U hfuse:w:0xd9:m
+  	AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe2:m -U hfuse:w:0xd9:m
 endif
 ifeq ($(MCU), atmega88)
-  AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe2:m -U hfuse:w:0xdf:m
+  	AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe2:m -U hfuse:w:0xdf:m
 endif
 ifeq ($(MCU), atmega8)
-  AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe4:m -U hfuse:w:0xd9:m 
+  	AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe4:m -U hfuse:w:0xd9:m 
 endif
 ifeq ($(MCU), $(filter $(MCU), attiny2313 attiny4313))
-  AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xE4:m
-  #AVRDUDE_WRITE_FLASH := -U lfuse:w:0x64:m #run with 1 Mhz clock #default clock mode
+  	AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xE4:m
+  	#AVRDUDE_WRITE_FLASH := -U lfuse:w:0x64:m #run with 1 Mhz clock #default clock mode
 endif
 
 ifneq ($(AVRDUDE_PROGRAMMER), )
