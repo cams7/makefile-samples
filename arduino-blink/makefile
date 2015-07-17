@@ -31,36 +31,52 @@ endif
 OPT=s
 CFLAGS_COMMON += -Wall -O$(OPT) -ffunction-sections -fdata-sections -ffunction-sections -fdata-sections -mmcu=$(MCU)
 
-CFLAGS = $(CFLAGS_COMMON) -std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<" 
-CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
+CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
+CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX) 
+CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions $(CFLAGS_SUFFIX)
 
-LDFLAGS = -Wl,-Map=$(MAP_FILE),--cref
+LDFLAGS = --cref -s -O$(OPT) -o"$@" $^ -l$(ARDUINO_CORE_NAME) -l$(ARDUINO_THREAD_NAME) -lm -Wl,-Map,$(@:%.elf=%.map),--cref -mrelax -Wl,--gc-sections -Wl,--gc-sections -L"$(ARDUINO_CORE_LIB_DIR)" -L"$(ARDUINO_THREAD_LIB_DIR)" -mmcu=$(MCU)
 
-all: $(ELF_FILE) size
+all: $(LSS_FILE) sizedummy
 
-size: $(ELF_FILE)
+sizedummy: $(ELF_FILE)
+	@echo 'Invoking: Print Size'
 	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $<
+	@echo 'Finished building: $@'
+	@echo ' '
 
 ifneq ($(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(LSS_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst)), )
 clean:
 	-rm $(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(LSS_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst))
+	@echo ' '
 else
 clean:
 	@echo "Nothing to clean."
+	@echo ' '
 endif
 
+$(CORE_DIR)/%.lss: $(ELF_FILE)
+	@echo 'Invoking: AVR Create Extended Listing'
+	$(SILENT) $(OBJDUMP) -h -S $< >"$@"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 $(CORE_DIR)/%.elf: $(OBJ_FILES)
-	@echo "Linking:" $@..
-	$(SILENT) $(CXX) --cref -s -O$(OPT) -o"$@" $(OBJ_FILES) -l$(ARDUINO_CORE_NAME) -l$(ARDUINO_THREAD_NAME) -mrelax -Wl,--gc-sections -Wl,--gc-sections -L"$(ARDUINO_CORE_LIB_DIR)" -L"$(ARDUINO_THREAD_LIB_DIR)" -mmcu=$(MCU) -lm $(LDFLAGS)
-	$(SILENT) $(OBJDUMP) -h -S $@  >"$(<:%.o=%.lss)"
+	@echo 'Building target: $@'
+	@echo 'Invoking: AVR C++ Linker'
+	$(SILENT) $(CXX) $(LDFLAGS)
+	@echo 'Finished building target: $@'
+	@echo ' '
 
 $(CORE_DIR)/%.o : $(SRC_DIR)/%.cpp
 	@echo "[$(TARGET)] Compiling:" $@... 
 	$(SILENT) $(CXX) $(CXXFLAGS)
+	@echo ' '
 	
 $(CORE_DIR)/%.o : $(SRC_DIR)/%.c
 	@echo "[$(TARGET)] Compiling:" $@... 
 	$(SILENT) $(CC) $(CFLAGS)
+	@echo ' '
 
 ###############
 
@@ -106,15 +122,19 @@ flash: $(HEX_FILE) #$(EEP_FILE)
 
 fuse:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSE) 
-
+	
 $(CORE_DIR)/%.hex: $(ELF_FILE)
-	@echo "Creating flash file:" $@...
-	$(SILENT) $(OBJCOPY) -O ihex -R .eeprom $< $@
+	@echo 'Create Flash image (ihex format)'
+	$(SILENT) $(OBJCOPY) -R .eeprom -R .fuse -R .lock -R .signature -O ihex $< "$@"
+	@echo 'Finished building: $@'
+	@echo ' '
 
 $(CORE_DIR)/%.eep: $(ELF_FILE)
-	@echo "Creating eeprom file:" $@...
-	$(SILENT) $(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
-	--change-section-lma .eeprom=0 -O ihex $< $@
+	@echo 'Create eeprom image (ihex format)'
+	$(SILENT) $(OBJCOPY) -j .eeprom --no-change-warnings --change-section-lma .eeprom=0 -O ihex $< "$@"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 else
 FLASH_MSG="You need to set AVRDUDE_PROGRAMMER/AVRDUDE_PORT/AVRDUDE_SPEED in common.mk"
 flash:
