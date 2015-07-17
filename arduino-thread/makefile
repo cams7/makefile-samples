@@ -1,4 +1,8 @@
--include ../common.mk
+ifeq ($(OS),Windows_NT)
+	-include ../common-win.mk 
+else
+	-include ../common.mk
+endif
 
 SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.cpp -printf "%f "`;do echo $$file; done)
 OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.cpp=%.o))

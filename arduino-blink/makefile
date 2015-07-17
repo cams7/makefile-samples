@@ -1,4 +1,8 @@
--include ../common.mk
+ifeq ($(OS),Windows_NT)
+	-include ../common-win.mk 
+else
+	-include ../common.mk
+endif
 
 ARDUINO_CORE_NAME = arduino_core
 ARDUINO_CORE_DIR = ../arduino

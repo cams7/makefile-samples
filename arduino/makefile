@@ -1,4 +1,8 @@
--include ../common.mk
+ifeq ($(OS),Windows_NT)
+	-include ../common-win.mk 
+else
+	-include ../common.mk
+endif
 
 CORE_LIBC_DIR = $(CORE_DIR)/avr-libc
 
