@@ -2,9 +2,9 @@
 
 CORE_LIBC_DIR = $(CORE_DIR)/avr-libc
 
-CORES_SRCS_CPP = WString.cpp WMath.cpp USBCore.cpp Tone.cpp Stream.cpp Print.cpp new.cpp IPAddress.cpp HID.cpp  HardwareSerial.cpp CDC.cpp
-CORES_SRCS_C = wiring_shift.c wiring_pulse.c wiring_digital.c wiring_analog.c wiring.c WInterrupts.c
-CORES_LIBC_SRCS = malloc.c realloc.c
+CORES_SRCS_CPP = $(shell for file in `find $(ARDUINO_CORES_DIR) -maxdepth 1 -name *.cpp -printf "%f "`;do echo $$file; done)
+CORES_SRCS_C = $(shell for file in `find $(ARDUINO_CORES_DIR) -maxdepth 1 -name *.c -printf "%f "`;do echo $$file; done)
+CORES_LIBC_SRCS = $(shell for file in `find $(ARDUINO_CORES_LIBC_DIR) -maxdepth 1 -name *.c -printf "%f "`;do echo $$file; done)
 
 OBJ_FILES = $(patsubst %, $(CORE_LIBC_DIR)/%, $(CORES_LIBC_SRCS:%.c=%.o)) $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_C:%.c=%.o)) $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_CPP:%.cpp=%.o))
 
@@ -28,9 +28,10 @@ endif
 OPT=s
 CFLAGS_COMMON += -Wall -O$(OPT) -ffunction-sections -fdata-sections -ffunction-sections -fdata-sections -mmcu=$(MCU)
 
-CFLAGS = $(CFLAGS_COMMON) -std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
-CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
-
+CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
+CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX)
+CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions $(CFLAGS_SUFFIX)
+	
 all: $(LIB_FILE:%.a=%.lss) sizedummy
 
 sizedummy: $(LIB_FILE)

@@ -13,8 +13,7 @@
 # Define your programmer in this file: common.mk
 -include ../common.mk
 
-INCLUDES = uart.h buffer.h
-SRCS = $(TARGET).c $(INCLUDES:.h=.c)
+SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.c -printf "%f "`;do echo $$file; done)
 OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.c=%.o))
 
 ifneq ($(CROSS), )
