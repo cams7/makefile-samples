@@ -37,8 +37,8 @@ endif
 
 OPT=s
 CFLAGS_COMMON += -Wall -O$(OPT) -ffunction-sections -fdata-sections -ffunction-sections -fdata-sections -mmcu=$(MCU)
-
 CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
+
 CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX) 
 CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions $(CFLAGS_SUFFIX)
 
@@ -47,9 +47,9 @@ LDFLAGS = -s -O$(OPT) -o"$@" $^ -l$(ARDUINO_CORE_NAME) -l$(ARDUINO_THREAD_NAME) 
 all: mkdir $(LSS_FILE) sizedummy
 
 sizedummy: $(ELF_FILE)
-	@echo 'Invoking: Print Size'
+	@echo "Invoking: Print Size"
 	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $<
-	@echo 'Finished building: $@'
+	@echo "Finished building: $@"
 	@echo ' '
 	
 ifeq ($(wildcard $(CORE_DIR) $(LIB_DIR)), )	
@@ -140,15 +140,15 @@ fuse:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSE) 
 	
 $(CORE_DIR)/%.hex: $(ELF_FILE)
-	@echo 'Create Flash image (ihex format)'
+	@echo "Create Flash image (ihex format)"
 	$(SILENT) $(OBJCOPY) -R .eeprom -R .fuse -R .lock -R .signature -O ihex $< "$@"
-	@echo 'Finished building: $@'
+	@echo "Finished building: $@"
 	@echo ' '
 
 $(CORE_DIR)/%.eep: $(ELF_FILE)
-	@echo 'Create eeprom image (ihex format)'
+	@echo "Create eeprom image (ihex format)"
 	$(SILENT) $(OBJCOPY) -j .eeprom --no-change-warnings --change-section-lma .eeprom=0 -O ihex $< "$@"
-	@echo 'Finished building: $@'
+	@echo "Finished building: $@"
 	@echo ' '
 
 else

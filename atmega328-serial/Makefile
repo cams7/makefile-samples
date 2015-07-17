@@ -1,16 +1,3 @@
-# Makefile
-# (C) 2011 Akafugu Corporation
-#
-# This program is free software; you can redistribute it and/or modify it under the
-# terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
-# version.
-#
-# This program is distributed in the hope that it will be useful, but WITHOUT ANY
-# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-# Define your programmer in this file: common.mk
 ifeq ($(OS),Windows_NT)
 	-include ../common-win.mk 
 else
@@ -21,17 +8,17 @@ SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.c -printf "%f "`
 OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.c=%.o))
 
 ifneq ($(CROSS), )
-  CC = $(CROSS)gcc
-#  CXX = $(CROSS)g++
-  OBJCOPY = $(CROSS)objcopy
-  OBJDUMP = $(CROSS)objdump
-  SIZE = $(CROSS)size
+  	CC = $(CROSS)gcc
+	CXX = $(CROSS)g++
+  	OBJCOPY = $(CROSS)objcopy
+  	OBJDUMP = $(CROSS)objdump
+  	SIZE = $(CROSS)size
 endif
 
-CFLAGS = -I$(INCLUDE_DIR)
+CFLAGS_COMMON = -I$(INCLUDE_DIR)
 
 ifneq ($(F_CPU),)
-  CFLAGS += -DF_CPU=$(F_CPU)
+  	CFLAGS_COMMON += -DF_CPU=$(F_CPU)
 endif
 
 # These will automatically be checked if they are set to YES
@@ -41,7 +28,7 @@ endif
 
 #define CHECK_ANSWER
 #  ifeq ($$($(1)), YES)
-#    CFLAGS += -D$(1)
+#    CFLAGS_COMMON += -D$(1)
 #  endif
 #endef
 
@@ -51,17 +38,24 @@ endif
 
 OPT=s
 
-CFLAGS += -g -O$(OPT) \
+CFLAGS_COMMON += -g -O$(OPT) \
 -ffreestanding -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums \
 -Wall -Wstrict-prototypes \
--Wa,-adhlns=$(@:%.o=%.lst) -std=gnu99 -mmcu=$(MCU) 
+-Wa,-adhlns=$(@:%.o=%.lst) -mmcu=$(MCU) 
 
-LDFLAGS = -Wl,-Map=$(MAP_FILE),--cref
+CFLAGS_SUFFIX = -MMD -MF $(@:%.o=%.d) -c $< -o $@ 
 
-all: mkdir $(ELF_FILE) size
+CFLAGS = $(CFLAGS_COMMON) -std=gnu99  
 
-size: $(ELF_FILE)
-	$(SILENT) $(SIZE) -C --mcu=$(MCU) $<
+LDFLAGS = -Wl,-Map=$(@:%.elf=%.map),--cref
+
+all: mkdir $(LSS_FILE) sizedummy
+
+sizedummy: $(ELF_FILE)
+	@echo "Invoking: Print Size"
+	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $<
+	@echo "Finished building: $@"
+	@echo ' '
 	
 ifeq ($(wildcard $(CORE_DIR) $(LIB_DIR)), )	
 mkdir:
@@ -72,27 +66,39 @@ else
 mkdir:
 endif
 	
-ifneq ($(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst)), )
+ifneq ($(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(LSS_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst)), )
 clean:
-	-rm $(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst))
+	-rm $(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(LSS_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst))
+	@echo ' '
 else
 clean:
 	@echo "Nothing to clean."
+	@echo ' '
 endif
 
-#.SECONDARY:
+$(CORE_DIR)/%.lss: $(ELF_FILE)
+	@echo "Invoking: AVR Create Extended Listing"
+	$(SILENT) $(OBJDUMP) -h -S $< >"$@"
+	@echo "Finished building: $@"
+	@echo ' '
 
 $(CORE_DIR)/%.elf: $(OBJ_FILES)
-	@echo "Linking:" $@...
+	@echo "Building target: $@"
+	@echo "Invoking: AVR C Linker"
 	$(SILENT) $(CC) $(CFLAGS) $^ --output $@ $(LDFLAGS)
+	@echo "Finished building target: $@"
+	@echo ' '
 
 #$(CORE_DIR)/%.o : $(SRC_DIR)/%.cpp
 #	@echo "[$(TARGET)] Compiling:" $@... 
 #	$(SILENT) $(CXX) $(CXXFLAGS) -MMD -MF $(@:%.o=%.d) -c $< -o $@
 
 $(CORE_DIR)/%.o : $(SRC_DIR)/%.c
-	@echo "[$(TARGET)] Compiling:" $@...
-	$(SILENT) $(CC) $(CFLAGS) -MMD -MF $(@:%.o=%.d) -c $< -o $@
+	@echo "Building file: $^"
+	@echo "Invoking: AVR Compiler"
+	$(SILENT) $(CC) $(CFLAGS) $(CFLAGS_SUFFIX)
+	@echo "Finished building: $^"
+	@echo ' '
 	
 #$(CORE_DIR)/%.d : $(SRC_DIR)/%.cpp
 #	@echo "[$(TARGET)] Generating dependency:" $@...
@@ -110,33 +116,33 @@ AVRDUDE := avrdude
 
 AVRDUDE_FLAGS += -p $(MCU)
 ifneq ($(AVRDUDE_PORT), )
-  AVRDUDE_FLAGS += -P $(AVRDUDE_PORT)
+  	AVRDUDE_FLAGS += -P $(AVRDUDE_PORT)
 endif
 ifneq ($(AVRDUDE_PROGRAMMER), )
-  AVRDUDE_FLAGS += -c $(AVRDUDE_PROGRAMMER)
+  	AVRDUDE_FLAGS += -c $(AVRDUDE_PROGRAMMER)
 endif
 ifneq ($(AVRDUDE_SPEED), )
-  AVRDUDE_FLAGS += -b $(AVRDUDE_SPEED)
+  	AVRDUDE_FLAGS += -b $(AVRDUDE_SPEED)
 endif
 
 #Add more verbose output if we dont have SILENT set
 ifeq ($(SILENT), )
-  AVRDUDE_FLAGS += -v -v
+  	AVRDUDE_FLAGS += -v -v
 endif
 
 # Fuses for internal 8MHz oscillator
 ifeq ($(MCU), atmega328p)
-  AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe2:m -U hfuse:w:0xd9:m
+  	AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe2:m -U hfuse:w:0xd9:m
 endif
 ifeq ($(MCU), atmega88)
-  AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe2:m -U hfuse:w:0xdf:m
+  	AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe2:m -U hfuse:w:0xdf:m
 endif
 ifeq ($(MCU), atmega8)
-  AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe4:m -U hfuse:w:0xd9:m 
+  	AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xe4:m -U hfuse:w:0xd9:m 
 endif
 ifeq ($(MCU), $(filter $(MCU), attiny2313 attiny4313))
-  AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xE4:m
-  #AVRDUDE_WRITE_FLASH := -U lfuse:w:0x64:m #run with 1 Mhz clock #default clock mode
+  	AVRDUDE_WRITE_FUSE ?= -U lfuse:w:0xE4:m
+  	#AVRDUDE_WRITE_FLASH := -U lfuse:w:0x64:m #run with 1 Mhz clock #default clock mode
 endif
 
 ifneq ($(AVRDUDE_PROGRAMMER), )
@@ -148,13 +154,16 @@ fuse:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FUSE) 
 
 $(CORE_DIR)/%.hex: $(ELF_FILE)
-	@echo "Creating flash file:" $@...
-	$(SILENT) $(OBJCOPY) -O ihex -R .eeprom $< $@
+	@echo "Create Flash image (ihex format)"
+	$(SILENT) $(OBJCOPY) -R .eeprom -R .fuse -R .lock -R .signature -O ihex $< "$@"
+	@echo "Finished building: $@"
+	@echo ' '
 
 $(CORE_DIR)/%.eep: $(ELF_FILE)
-	@echo "Creating eeprom file:" $@...
-	$(SILENT) $(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
-	--change-section-lma .eeprom=0 -O ihex $< $@
+	@echo "Create eeprom image (ihex format)"
+	$(SILENT) $(OBJCOPY) -j .eeprom --no-change-warnings --change-section-lma .eeprom=0 -O ihex $< "$@"
+	@echo "Finished building: $@"
+	@echo ' '
 else
 FLASH_MSG="You need to set AVRDUDE_PROGRAMMER/AVRDUDE_PORT/AVRDUDE_SPEED in common.mk"
 flash:
