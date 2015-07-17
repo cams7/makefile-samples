@@ -1,15 +1,11 @@
--include C:/Users/cams7/desenv/github/makefile-samples/user.mk
+-include ../avr.mk
+-include ../arduino.mk
 
 #SILENT ?= @
 CROSS ?= avr-
 
 MCU ?= atmega328p
 F_CPU ?= 16000000UL
-
-ARDUINO_DIR = C:/Users/cams7/desenv/embarcado/arduino/arduino-1.0.6
-ARDUINO_VARIANTS_DIR = $(ARDUINO_DIR)/hardware/arduino/variants/standard
-ARDUINO_CORES_DIR = $(ARDUINO_DIR)/hardware/arduino/cores/arduino
-ARDUINO_CORES_LIBC_DIR = $(ARDUINO_CORES_DIR)/avr-libc
 
 CORES_SRCS_CPP = WString.cpp WMath.cpp USBCore.cpp Tone.cpp Stream.cpp Print.cpp new.cpp IPAddress.cpp HID.cpp  HardwareSerial.cpp CDC.cpp
 CORES_SRCS_C = wiring_shift.c wiring_pulse.c wiring_digital.c wiring_analog.c wiring.c WInterrupts.c
