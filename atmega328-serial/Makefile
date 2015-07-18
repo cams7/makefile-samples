@@ -15,39 +15,20 @@ ifneq ($(CROSS), )
   	SIZE = $(CROSS)size
 endif
 
-CFLAGS_COMMON = -I$(INCLUDE_DIR)
+CFLAGS_COMMON = -I"$(INCLUDE_DIR)"
 
 ifneq ($(F_CPU),)
   	CFLAGS_COMMON += -DF_CPU=$(F_CPU)
 endif
 
-# These will automatically be checked if they are set to YES
-#SPECIAL_DEFS +=
-
-## Special defines
-
-#define CHECK_ANSWER
-#  ifeq ($$($(1)), YES)
-#    CFLAGS_COMMON += -D$(1)
-#  endif
-#endef
-
-#$(foreach i,$(SPECIAL_DEFS),$(eval $(call CHECK_ANSWER,$(i))))
-
-##
-
 OPT=s
 
-CFLAGS_COMMON += -g -O$(OPT) \
--ffreestanding -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums \
--Wall -Wstrict-prototypes \
--Wa,-adhlns=$(@:%.o=%.lst) -mmcu=$(MCU) 
+CFLAGS_COMMON += -Wall -O$(OPT) -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -funsigned-char -funsigned-bitfields -mmcu=$(MCU)
+CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
 
-CFLAGS_SUFFIX = -MMD -MF $(@:%.o=%.d) -c $< -o $@ 
+CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX)  
 
-CFLAGS = $(CFLAGS_COMMON) -std=gnu99  
-
-LDFLAGS = -Wl,-Map=$(@:%.elf=%.map),--cref
+LDFLAGS = -Wl,-Map,$(@:%.elf=%.map) -mmcu=$(MCU) -o "$@" $^
 
 all: mkdir $(LSS_FILE) sizedummy
 
@@ -85,7 +66,7 @@ $(CORE_DIR)/%.lss: $(ELF_FILE)
 $(CORE_DIR)/%.elf: $(OBJ_FILES)
 	@echo "Building target: $@"
 	@echo "Invoking: AVR C Linker"
-	$(SILENT) $(CC) $(CFLAGS) $^ --output $@ $(LDFLAGS)
+	$(SILENT) $(CC) $(LDFLAGS)
 	@echo "Finished building target: $@"
 	@echo ' '
 
@@ -94,19 +75,11 @@ $(CORE_DIR)/%.elf: $(OBJ_FILES)
 #	$(SILENT) $(CXX) $(CXXFLAGS) -MMD -MF $(@:%.o=%.d) -c $< -o $@
 
 $(CORE_DIR)/%.o : $(SRC_DIR)/%.c
-	@echo "Building file: $^"
+	@echo "Building file: $<"
 	@echo "Invoking: AVR Compiler"
-	$(SILENT) $(CC) $(CFLAGS) $(CFLAGS_SUFFIX)
-	@echo "Finished building: $^"
+	$(SILENT) $(CC) $(CFLAGS)
+	@echo "Finished building: $<"
 	@echo ' '
-	
-#$(CORE_DIR)/%.d : $(SRC_DIR)/%.cpp
-#	@echo "[$(TARGET)] Generating dependency:" $@...
-#	$(SILENT) $(CXX) $(CXXFLAGS) -MM -MT $(addsuffix .o, $(basename $@)) -MF $@ $<
-
-#$(CORE_DIR)/%.d : $(SRC_DIR)/%.c
-#	@echo "[$(TARGET)] Generating dependency:" $@...
-#	$(SILENT) $(CC) $(CFLAGS) -MM -MT $(addsuffix .o, $(basename $@)) -MF $@ $<
 
 ###############
 
