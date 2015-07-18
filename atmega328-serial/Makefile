@@ -9,8 +9,9 @@ SERIAL_DIR = ../avr-serial
 SERIAL_LIB_DIR = $(SERIAL_DIR)/lib
 SERIAL_INCLUDE_DIR = $(SERIAL_DIR)/$(INCLUDE_DIR)
 
-SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.c -printf "%f "`;do echo $$file; done)
-OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.c=%.o))
+SRCS = $(shell for file in `find $(SRC_DIR) -type f`; do echo $$file; done)
+SRCS_C = $(filter $(SRC_DIR)/%.c, $(SRCS))
+OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_C:%.c=%.o))
 
 ifneq ($(CROSS), )
   	CC = $(CROSS)gcc

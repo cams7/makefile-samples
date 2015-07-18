@@ -4,8 +4,9 @@ else
 	-include ../common.mk
 endif
 
-SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.c -printf "%f "`;do echo $$file; done)
-OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.c=%.o))
+SRCS = $(shell for file in `find $(SRC_DIR) -type f`; do echo $$file; done)
+SRCS_C = $(filter $(SRC_DIR)/%.c, $(SRCS))
+OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_C:%.c=%.o))
 
 LIB_FILE = $(LIB_DIR)/libavr_serial.a
 
@@ -33,20 +34,13 @@ CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX)
 
 LDFLAGS = -Wl,-Map,$(@:%.elf=%.map) -mmcu=$(MCU) -o "$@" $^
 
-all: mkdir $(LIB_FILE:%.a=%.lss) sizedummy
-#all: mkdir $(LSS_FILE) sizedummy
+all: mkdir $(LSS_FILE) $(LIB_FILE:%.a=%.lss) sizedummy
 
-sizedummy: $(LIB_FILE)
+sizedummy: $(ELF_FILE) $(LIB_FILE)
 	@echo "Invoking: Print Size"
-	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $<
+	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $^
 	@echo "Finished building: $@"
 	@echo ' '
-
-#sizedummy: $(ELF_FILE)
-#	@echo "Invoking: Print Size"
-#	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $<
-#	@echo "Finished building: $@"
-#	@echo ' '
 	
 ifeq ($(wildcard $(CORE_DIR) $(LIB_DIR)), )	
 mkdir:
@@ -67,17 +61,15 @@ clean:
 	@echo ' '
 endif
 
-$(LIB_DIR)/%.lss: $(LIB_FILE)
+define make-lss 
+$1/%.lss: $(filter $1/%, $(LIB_FILE) $(ELF_FILE))
 	@echo 'Invoking: AVR Create Extended Listing'
-	$(SILENT) $(OBJDUMP) -h -S $< >"$@"
-	@echo 'Finished building: $@'
+	$(SILENT) $(OBJDUMP) -h -S $$< >"$$@"
+	@echo 'Finished building: $$@'
 	@echo ' '
-	
-#$(CORE_DIR)/%.lss: $(ELF_FILE)
-#	@echo "Invoking: AVR Create Extended Listing"
-#	$(SILENT) $(OBJDUMP) -h -S $< >"$@"
-#	@echo "Finished building: $@"
-#	@echo ' '
+endef
+
+$(foreach i, $(LIB_DIR) $(CORE_DIR), $(eval $(call make-lss, $i)))
 
 $(LIB_DIR)/%.a: $(OBJ_FILES)
 	@echo 'Building target: $@'
@@ -86,12 +78,12 @@ $(LIB_DIR)/%.a: $(OBJ_FILES)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-#$(CORE_DIR)/%.elf: $(OBJ_FILES)
-#	@echo "Building target: $@"
-#	@echo "Invoking: AVR C Linker"
-#	$(SILENT) $(CC) $(LDFLAGS)
-#	@echo "Finished building target: $@"
-#	@echo ' '
+$(CORE_DIR)/%.elf: $(OBJ_FILES)
+	@echo "Building target: $@"
+	@echo "Invoking: AVR C Linker"
+	$(SILENT) $(CC) $(LDFLAGS)
+	@echo "Finished building target: $@"
+	@echo ' '
 
 #$(CORE_DIR)/%.o : $(SRC_DIR)/%.cpp
 #	@echo "[$(TARGET)] Compiling:" $@... 

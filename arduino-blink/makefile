@@ -13,8 +13,9 @@ ARDUINO_THREAD_DIR = ../arduino-thread
 ARDUINO_THREAD_LIB_DIR = $(ARDUINO_THREAD_DIR)/lib
 ARDUINO_THREAD_INCLUDE_DIR = $(ARDUINO_THREAD_DIR)/$(INCLUDE_DIR)
 
-SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.cpp -printf "%f "`;do echo $$file; done)
-OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.cpp=%.o))
+SRCS = $(shell for file in `find $(SRC_DIR) -type f`; do echo $$file; done)
+SRCS_CPP = $(filter $(SRC_DIR)/%.cpp, $(SRCS))
+OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_CPP:%.cpp=%.o))
 
 ifneq ($(CROSS), )
   	CC = $(CROSS)gcc

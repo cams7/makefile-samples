@@ -4,8 +4,9 @@ else
 	-include ../common.mk
 endif
 
-SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.cpp -printf "%f "`;do echo $$file; done)
-OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.cpp=%.o))
+SRCS = $(shell for file in `find $(SRC_DIR) -type f`; do echo $$file; done)
+SRCS_CPP = $(filter $(SRC_DIR)/%.cpp, $(SRCS))
+OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_CPP:%.cpp=%.o))
 
 LIB_FILE = $(LIB_DIR)/libarduino_thread.a
 
@@ -30,8 +31,8 @@ endif
 
 OPT=s
 CFLAGS_COMMON += -Wall -O$(OPT) -ffunction-sections -fdata-sections -ffunction-sections -fdata-sections -mmcu=$(MCU)
-
 CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<" 
+
 CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX)
 CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions $(CFLAGS_SUFFIX)
 

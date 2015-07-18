@@ -4,16 +4,11 @@ else
 	-include ../common.mk
 endif
 
-CORE_LIBC_DIR = $(CORE_DIR)/avr-libc
+CORES_SRCS = $(shell for file in `find $(ARDUINO_CORES_DIR) -type f`; do echo $$file; done)
+CORES_SRCS_CPP = $(filter $(ARDUINO_CORES_DIR)/%.cpp, $(CORES_SRCS))
+CORES_SRCS_C = $(filter $(ARDUINO_CORES_DIR)/%.c, $(CORES_SRCS))
 
-CORES_SRCS_CPP = $(shell for file in `find $(ARDUINO_CORES_DIR) -maxdepth 1 -name *.cpp -printf "%f "`;do echo $$file; done)
-CORES_SRCS_C = $(shell for file in `find $(ARDUINO_CORES_DIR) -maxdepth 1 -name *.c -printf "%f "`;do echo $$file; done)
-
-OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_CPP:%.cpp=%.o)) $(patsubst %, $(CORE_DIR)/%, $(CORES_SRCS_C:%.c=%.o))
-ifeq ($(OS),Windows_NT)	
-	CORES_LIBC_SRCS = $(shell for file in `find $(ARDUINO_CORES_LIBC_DIR) -maxdepth 1 -name *.c -printf "%f "`;do echo $$file; done)
-	OBJ_FILES += $(patsubst %, $(CORE_LIBC_DIR)/%, $(CORES_LIBC_SRCS:%.c=%.o))
-endif
+OBJ_FILES = $(patsubst $(ARDUINO_CORES_DIR)/%, $(CORE_DIR)/%, $(CORES_SRCS_CPP:%.cpp=%.o)) $(patsubst $(ARDUINO_CORES_DIR)/%, $(CORE_DIR)/%, $(CORES_SRCS_C:%.c=%.o))
 
 LIB_FILE = $(LIB_DIR)/libarduino_core.a
 
@@ -37,10 +32,12 @@ endif
 
 OPT=s
 CFLAGS_COMMON += -Wall -O$(OPT) -ffunction-sections -fdata-sections -ffunction-sections -fdata-sections -mmcu=$(MCU)
-
 CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
+
 CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX)
 CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions $(CFLAGS_SUFFIX)
+
+CORE_LIBC_DIR = $(CORE_DIR)/avr-libc
 	
 all: mkdir $(LIB_FILE:%.a=%.lss) sizedummy
 
@@ -88,13 +85,8 @@ $(CORE_DIR)/%.o : $(ARDUINO_CORES_DIR)/%.cpp
 	@echo ' '
 		
 $(CORE_DIR)/%.o : $(ARDUINO_CORES_DIR)/%.c
-	@echo "Compiling: " $@...
+	@echo "Building file: $<"
+	@echo "Invoking: AVR Compiler"
 	$(SILENT) $(CC) $(CFLAGS)
+	@echo "Finished building: $<"
 	@echo ' '
-	
-ifeq ($(OS),Windows_NT)	
-$(CORE_LIBC_DIR)/%.o : $(ARDUINO_CORES_LIBC_DIR)/%.c
-	@echo "Compiling: " $@...
-	$(SILENT) $(CC) $(CFLAGS)
-	@echo ' '
-endif
