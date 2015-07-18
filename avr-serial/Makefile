@@ -4,13 +4,10 @@ else
 	-include ../common.mk
 endif
 
-SERIAL_NAME = avr_serial
-SERIAL_DIR = ../avr-serial
-SERIAL_LIB_DIR = $(SERIAL_DIR)/lib
-SERIAL_INCLUDE_DIR = $(SERIAL_DIR)/$(INCLUDE_DIR)
-
 SRCS = $(shell for file in `find $(SRC_DIR) -maxdepth 1 -name *.c -printf "%f "`;do echo $$file; done)
 OBJ_FILES = $(patsubst %, $(CORE_DIR)/%, $(SRCS:%.c=%.o))
+
+LIB_FILE = $(LIB_DIR)/libavr_serial.a
 
 ifneq ($(CROSS), )
   	CC = $(CROSS)gcc
@@ -21,7 +18,7 @@ ifneq ($(CROSS), )
   	SIZE = $(CROSS)size
 endif
 
-CFLAGS_COMMON = -I"$(SERIAL_INCLUDE_DIR)" -I"$(INCLUDE_DIR)"
+CFLAGS_COMMON = -I"$(INCLUDE_DIR)"
 
 ifneq ($(F_CPU),)
   	CFLAGS_COMMON += -DF_CPU=$(F_CPU)
@@ -34,15 +31,22 @@ CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
 
 CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX)  
 
-LDFLAGS = -Wl,-Map,$(@:%.elf=%.map) -L"$(SERIAL_LIB_DIR)" -mmcu=$(MCU) -o "$@" $^ -l$(SERIAL_NAME)
+LDFLAGS = -Wl,-Map,$(@:%.elf=%.map) -mmcu=$(MCU) -o "$@" $^
 
-all: mkdir $(LSS_FILE) sizedummy
+all: mkdir $(LIB_FILE:%.a=%.lss) sizedummy
+#all: mkdir $(LSS_FILE) sizedummy
 
-sizedummy: $(ELF_FILE)
+sizedummy: $(LIB_FILE)
 	@echo "Invoking: Print Size"
 	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $<
 	@echo "Finished building: $@"
 	@echo ' '
+
+#sizedummy: $(ELF_FILE)
+#	@echo "Invoking: Print Size"
+#	$(SILENT) $(SIZE) --format=avr --mcu=$(MCU) $<
+#	@echo "Finished building: $@"
+#	@echo ' '
 	
 ifeq ($(wildcard $(CORE_DIR) $(LIB_DIR)), )	
 mkdir:
@@ -53,9 +57,9 @@ else
 mkdir:
 endif
 	
-ifneq ($(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(LSS_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst)), )
+ifneq ($(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(LSS_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst) $(LIB_FILE) $(LIB_FILE:%.a=%.lss)), )
 clean:
-	-rm $(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(LSS_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst))
+	-rm $(wildcard $(OBJ_FILES) $(ELF_FILE) $(HEX_FILE) $(EEP_FILE) $(MAP_FILE) $(LSS_FILE) $(OBJ_FILES:%.o=%.d) $(OBJ_FILES:%.o=%.lst) $(LIB_FILE) $(LIB_FILE:%.a=%.lss))
 	@echo ' '
 else
 clean:
@@ -63,18 +67,31 @@ clean:
 	@echo ' '
 endif
 
-$(CORE_DIR)/%.lss: $(ELF_FILE)
-	@echo "Invoking: AVR Create Extended Listing"
+$(LIB_DIR)/%.lss: $(LIB_FILE)
+	@echo 'Invoking: AVR Create Extended Listing'
 	$(SILENT) $(OBJDUMP) -h -S $< >"$@"
-	@echo "Finished building: $@"
+	@echo 'Finished building: $@'
+	@echo ' '
+	
+#$(CORE_DIR)/%.lss: $(ELF_FILE)
+#	@echo "Invoking: AVR Create Extended Listing"
+#	$(SILENT) $(OBJDUMP) -h -S $< >"$@"
+#	@echo "Finished building: $@"
+#	@echo ' '
+
+$(LIB_DIR)/%.a: $(OBJ_FILES)
+	@echo 'Building target: $@'
+	@echo 'Invoking: AVR Archiver'
+	$(SILENT) $(AR) -r  "$@" $^
+	@echo 'Finished building target: $@'
 	@echo ' '
 
-$(CORE_DIR)/%.elf: $(OBJ_FILES)
-	@echo "Building target: $@"
-	@echo "Invoking: AVR C Linker"
-	$(SILENT) $(CC) $(LDFLAGS)
-	@echo "Finished building target: $@"
-	@echo ' '
+#$(CORE_DIR)/%.elf: $(OBJ_FILES)
+#	@echo "Building target: $@"
+#	@echo "Invoking: AVR C Linker"
+#	$(SILENT) $(CC) $(LDFLAGS)
+#	@echo "Finished building target: $@"
+#	@echo ' '
 
 #$(CORE_DIR)/%.o : $(SRC_DIR)/%.cpp
 #	@echo "[$(TARGET)] Compiling:" $@... 
