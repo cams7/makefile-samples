@@ -19,6 +19,9 @@ LIB_DIR = lib
 
 TARGET = main
 
+MAIN_C_FILE = $(SRC_DIR)/$(TARGET).c
+MAIN_CPP_FILE = $(SRC_DIR)/$(TARGET).cpp
+
 ELF_FILE = $(CORE_DIR)/$(TARGET).elf
 HEX_FILE = $(CORE_DIR)/$(TARGET).hex
 EEP_FILE = $(CORE_DIR)/$(TARGET).eep

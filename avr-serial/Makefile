@@ -6,7 +6,8 @@ endif
 
 SRCS = $(shell for file in `find $(SRC_DIR) -type f`; do echo $$file; done)
 SRCS_C = $(filter $(SRC_DIR)/%.c, $(SRCS))
-OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_C:%.c=%.o))
+SRCS_CPP = $(filter $(SRC_DIR)/%.cpp, $(SRCS))
+OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_C:%.c=%.o)) $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_CPP:%.cpp=%.o))
 
 LIB_FILE = $(LIB_DIR)/libavr_serial.a
 
@@ -30,9 +31,8 @@ OPT=s
 CFLAGS_COMMON += -Wall -O$(OPT) -fpack-struct -fshort-enums -ffunction-sections -fdata-sections -funsigned-char -funsigned-bitfields -mmcu=$(MCU)
 CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
 
-CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX)  
-
-LDFLAGS = -Wl,-Map,$(@:%.elf=%.map) -mmcu=$(MCU) -o "$@" $^
+CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX)
+CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions $(CFLAGS_SUFFIX)  
 
 all: mkdir $(LSS_FILE) $(LIB_FILE:%.a=%.lss) sizedummy
 
@@ -78,16 +78,32 @@ $(LIB_DIR)/%.a: $(OBJ_FILES)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
+ifneq ($(wildcard $(MAIN_C_FILE)), )
 $(CORE_DIR)/%.elf: $(OBJ_FILES)
 	@echo "Building target: $@"
 	@echo "Invoking: AVR C Linker"
-	$(SILENT) $(CC) $(LDFLAGS)
+	$(SILENT) $(CC) -Wl,-Map,$(@:%.elf=%.map) -mmcu=$(MCU) -o "$@" $^
 	@echo "Finished building target: $@"
 	@echo ' '
+else ifneq ($(wildcard $(MAIN_CPP_FILE)), )
+$(CORE_DIR)/%.elf: $(OBJ_FILES)
+	@echo "Building target: $@"
+	@echo "Invoking: AVR C++ Linker"
+	$(SILENT) $(CXX) -Wl,-Map,$(@:%.elf=%.map),--cref -mrelax -Wl,--gc-sections -mmcu=$(MCU) -o "$@" $^
+	@echo "Finished building target: $@"
+	@echo ' '
+else
+$(CORE_DIR)/%.elf:
+	@echo "$TARGET file not found"
+	@echo ' '
+endif
 
-#$(CORE_DIR)/%.o : $(SRC_DIR)/%.cpp
-#	@echo "[$(TARGET)] Compiling:" $@... 
-#	$(SILENT) $(CXX) $(CXXFLAGS) -MMD -MF $(@:%.o=%.d) -c $< -o $@
+$(CORE_DIR)/%.o : $(SRC_DIR)/%.cpp
+	@echo "Building file: $<"
+	@echo "Invoking: AVR C++ Compiler"
+	$(SILENT) $(CXX) $(CXXFLAGS)
+	@echo "Finished building: $<"
+	@echo ' '
 
 $(CORE_DIR)/%.o : $(SRC_DIR)/%.c
 	@echo "Building file: $<"

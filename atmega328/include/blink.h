@@ -1,13 +1,15 @@
 /*
  * blink.h
  *
- *  Created on: 16/07/2015
+ *  Created on: 18/07/2015
  *      Author: cams7
  */
 
-#ifndef BLINK_H_
-#define BLINK_H_
+#ifndef INCLUDE_BLINK_H_
+#define INCLUDE_BLINK_H_
 
-int getDelayInMs(void);
+#include <inttypes.h>
 
-#endif /* BLINK_H_ */
+uint16_t getDelayInMs(void);
+
+#endif /* INCLUDE_BLINK_H_ */
