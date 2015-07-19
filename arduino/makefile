@@ -80,8 +80,10 @@ $(LIB_DIR)/%.a: $(OBJ_FILES)
 	@echo ' '
 
 $(CORE_DIR)/%.o : $(ARDUINO_CORES_DIR)/%.cpp
-	@echo "Compiling: " $@... 
+	@echo "Building file: $<"
+	@echo "Invoking: AVR C++ Compiler"
 	$(SILENT) $(CXX) $(CXXFLAGS)
+	@echo "Finished building: $<"
 	@echo ' '
 		
 $(CORE_DIR)/%.o : $(ARDUINO_CORES_DIR)/%.c

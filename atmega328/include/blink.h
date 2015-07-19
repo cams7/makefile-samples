@@ -8,8 +8,6 @@
 #ifndef INCLUDE_BLINK_H_
 #define INCLUDE_BLINK_H_
 
-#include <inttypes.h>
-
-uint16_t getDelayInMs(void);
+int getDelayInMs(void);
 
 #endif /* INCLUDE_BLINK_H_ */

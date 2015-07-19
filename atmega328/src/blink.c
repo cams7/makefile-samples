@@ -7,6 +7,6 @@
 
 #include <blink.h>
 
-uint16_t getDelayInMs(void) {
-	return 1000;
+int getDelayInMs(void) {
+	return 100;
 }

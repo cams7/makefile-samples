@@ -15,7 +15,8 @@ ARDUINO_THREAD_INCLUDE_DIR = $(ARDUINO_THREAD_DIR)/$(INCLUDE_DIR)
 
 SRCS = $(shell for file in `find $(SRC_DIR) -type f`; do echo $$file; done)
 SRCS_CPP = $(filter $(SRC_DIR)/%.cpp, $(SRCS))
-OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_CPP:%.cpp=%.o))
+SRCS_C = $(filter $(SRC_DIR)/%.c, $(SRCS))
+OBJ_FILES = $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_CPP:%.cpp=%.o)) $(patsubst $(SRC_DIR)/%, $(CORE_DIR)/%, $(SRCS_C:%.c=%.o))
 
 ifneq ($(CROSS), )
   	CC = $(CROSS)gcc
@@ -86,13 +87,17 @@ $(CORE_DIR)/%.elf: $(OBJ_FILES)
 	@echo ' '
 
 $(CORE_DIR)/%.o : $(SRC_DIR)/%.cpp
-	@echo "[$(TARGET)] Compiling:" $@... 
+	@echo "Building file: $<"
+	@echo "Invoking: AVR C++ Compiler"
 	$(SILENT) $(CXX) $(CXXFLAGS)
+	@echo "Finished building: $<"
 	@echo ' '
 	
 $(CORE_DIR)/%.o : $(SRC_DIR)/%.c
-	@echo "[$(TARGET)] Compiling:" $@... 
+	@echo "Building file: $<"
+	@echo "Invoking: AVR Compiler"
 	$(SILENT) $(CC) $(CFLAGS)
+	@echo "Finished building: $<"
 	@echo ' '
 
 ###############

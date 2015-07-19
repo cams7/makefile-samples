@@ -10,7 +10,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 
-#include <blink.h>
+//#include <blink.h>
 
 #define LED_BIT PB5
 #define LED_HIGH PORTB |= _BV(LED_BIT)
