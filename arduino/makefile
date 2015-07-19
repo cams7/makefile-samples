@@ -22,9 +22,6 @@ ifneq ($(CROSS), )
 endif
 
 CFLAGS_COMMON = -I"$(ARDUINO_VARIANTS_DIR)" -I"$(ARDUINO_CORES_DIR)"
-ifeq ($(OS),Windows_NT)
-	CFLAGS_COMMON += -I"$(ARDUINO_CORES_LIBC_DIR)"
-endif
 
 ifneq ($(F_CPU),)
   	CFLAGS_COMMON += -DF_CPU=$(F_CPU)
@@ -36,8 +33,6 @@ CFLAGS_SUFFIX = -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -c -o "$@" "$<"
 
 CFLAGS = $(CFLAGS_COMMON) -std=gnu99 $(CFLAGS_SUFFIX)
 CXXFLAGS = $(CFLAGS_COMMON) -fno-exceptions $(CFLAGS_SUFFIX)
-
-CORE_LIBC_DIR = $(CORE_DIR)/avr-libc
 	
 all: mkdir $(LIB_FILE:%.a=%.lss) sizedummy
 
@@ -47,10 +42,10 @@ sizedummy: $(LIB_FILE)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-ifeq ($(wildcard $(CORE_LIBC_DIR) $(LIB_DIR)), )	
+ifeq ($(wildcard $(CORE_DIR) $(LIB_DIR)), )	
 mkdir:
-	@echo "Create dirs $(CORE_LIBC_DIR) $(LIB_DIR)" 
-	$(MKDIR_P) $(CORE_LIBC_DIR) $(LIB_DIR)
+	@echo "Create dirs $(CORE_DIR) $(LIB_DIR)" 
+	$(MKDIR_P) $(CORE_DIR) $(LIB_DIR)
 	@echo ' '
 else
 mkdir:
