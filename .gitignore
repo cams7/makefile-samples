@@ -3,13 +3,3 @@
 
 #Windows
 Thumbs.db
-
-#Arquivos gerado pelo makefile
-*.o
-*.d
-*.lst
-*.map
-*.elf
-*.hex
-*.lss
-*.a
